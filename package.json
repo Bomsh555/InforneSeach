@@ -1,0 +1,11 @@
+{
+  "name": "inforneseach",
+  "version": "1.0.0",
+  "description": "InforneSeach site with auth and prices",
+  "scripts": {
+    "start": "cd server && npm install && npm start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

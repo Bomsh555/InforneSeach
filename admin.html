@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Админ — Пользователи</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="auth.js"></script>
+  <style>
+    .admin-header{ padding:1rem; background: #111; color:#fff; }
+    .admin-container{ max-width:1100px; margin:1.25rem auto; padding:0 1rem; }
+    .status{ margin-bottom: .75rem; color:#333; }
+    table.users{ width:100%; border-collapse:collapse; background:#fff; }
+    table.users th, table.users td{ padding:.6rem .75rem; border:1px solid #eee; text-align:left; }
+    table.users th{ background:#fafafa; }
+    .controls{ margin-bottom: .75rem; display:flex; gap:.5rem; }
+    .btn{ padding:.45rem .7rem; border-radius:8px; border:none; cursor:pointer; }
+    .btn-ghost{ background:transparent; border:1px solid #ccc; }
+    .btn-primary{ background: linear-gradient(90deg,#3b0066,#7a00ff); color:#fff; }
+    .btn-danger{ background:#b00; color:#fff; }
+  </style>
+</head>
+<body>
+  <header class="admin-header">
+    <div class="admin-container">
+      <strong>Админ: зареєстровані користувачі</strong>
+      <span style="float:right"><a href="/">На головну</a></span>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    <p class="status" id="status">Загрузка...</p>
+
+    <div class="controls">
+      <button id="refresh" class="btn btn-ghost">Оновити</button>
+      <button id="export-csv" class="btn btn-primary">Експорт CSV</button>
+      <button id="export-txt" class="btn btn-primary">Експорт TXT</button>
+      <button id="clear-data" class="btn btn-danger">Очистити всі дані</button>
+    </div>
+
+    <div id="content">
+      <table class="users" id="usersTable" aria-live="polite">
+        <thead>
+          <tr><th>ID</th><th>Email</th><th>Зареєстрований</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+  (function(){
+    const statusEl = document.getElementById('status');
+    const tbody = document.querySelector('#usersTable tbody');
+    const refreshBtn = document.getElementById('refresh');
+    const exportCsvBtn = document.getElementById('export-csv');
+    const exportTxtBtn = document.getElementById('export-txt');
+    const clearBtn = document.getElementById('clear-data');
+
+    function showStatus(msg, isError){ 
+      statusEl.textContent = msg; 
+      statusEl.style.color = isError ? '#b00' : '#333'; 
+    }
+
+    function loadUsers(){
+      const users = Auth.getUsers();
+      if (!users || users.length === 0){
+        showStatus('Користувачів не знайдено');
+        tbody.innerHTML = '<tr><td colspan="3">Користувачів не знайдено</td></tr>';
+        return;
+      }
+      renderUsers(users);
+      showStatus(`Знайдено ${users.length} користувачів`);
+    }
+
+    function renderUsers(users){
+      tbody.innerHTML = '';
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(u.id)}</td>
+          <td>${escapeHtml(u.email)}</td>
+          <td>${escapeHtml(new Date(u.created_at).toLocaleString())}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(s){ 
+      if (s==null) return ''; 
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c])); 
+    }
+
+    function exportCSV(){
+      const users = Auth.getUsers();
+      if (!users.length) return;
+      const rows = users.map(u => [u.id, u.email, u.created_at].map(cell => '"'+String(cell).replace(/"/g,'""')+'"').join(','));
+      const csv = 'ID,Email,Зареєстрований\n' + rows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      downloadFile(blob, 'users.csv');
+    }
+
+    function exportTXT(){
+      const users = Auth.getUsers();
+      if (!users.length) return;
+      let txt = 'Зареєстровані користувачі\n' + '='.repeat(50) + '\n\n';
+      users.forEach((u, i) => {
+        txt += `${i+1}. Email: ${u.email}\n   ID: ${u.id}\n   Дата: ${new Date(u.created_at).toLocaleString()}\n\n`;
+      });
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+      downloadFile(blob, 'users.txt');
+    }
+
+    function downloadFile(blob, filename){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    refreshBtn.addEventListener('click', loadUsers);
+    exportCsvBtn.addEventListener('click', exportCSV);
+    exportTxtBtn.addEventListener('click', exportTXT);
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Очистити всі дані користувачів? Це неможливо скасувати.')){
+        localStorage.removeItem(Auth.DB_KEY);
+        loadUsers();
+      }
+    });
+
+    // Initial load
+    loadUsers();
+  })();
+  </script>
+</body>
+</html>

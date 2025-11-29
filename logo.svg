@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Magnifying glass circle -->
+  <circle cx="70" cy="70" r="50" fill="none" stroke="#FF5722" stroke-width="8"/>
+  
+  <!-- Magnifying glass handle -->
+  <line x1="110" y1="110" x2="160" y2="160" stroke="#FF5722" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Flame inside magnifying glass -->
+  <g transform="translate(70, 65)">
+    <!-- Outer flame shape -->
+    <path d="M 0,-20 Q -15,-5 -15,10 Q -15,25 0,30 Q 15,25 15,10 Q 15,-5 0,-20" 
+          fill="#FF5722" stroke="none"/>
+    <!-- Inner flame highlight -->
+    <path d="M 0,-15 Q -10,-5 -10,8 Q -10,20 0,24 Q 10,20 10,8 Q 10,-5 0,-15" 
+          fill="#FFB74D" stroke="none" opacity="0.8"/>
+  </g>
+</svg>

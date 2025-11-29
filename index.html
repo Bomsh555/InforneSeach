@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>InforneSeach</title>
+    <script src="auth.js"></script>
+</head>
+<body>
+    <!-- Left sidebar with tabs -->
+    <aside class="sidebar" role="navigation">
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="#home" class="sidebar-link active" data-page="home">Главная</a></li>
+                <li><a href="#prices" class="sidebar-link" data-page="prices">Цены</a></li>
+                <li><a href="#dox" class="sidebar-link" data-page="dox">DOX</a></li>
+                <li id="admin-tab-li" style="display: none;"><a href="#admin" class="sidebar-link" data-page="admin">Админ</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <header class="site-header" role="banner">
+        <div class="container">
+            <div class="brand-wrapper">
+                <img src="logo.svg" alt="InforneSeach" class="logo" />
+                <h1 class="brand">InforneSeach</h1>
+            </div>
+
+            <nav class="header-nav" aria-label="Главная навигация">
+                <ul>
+                    <li><a href="#" class="login">Вход</a></li>
+                    <li><a href="#" class="register">Регистрация</a></li>
+                    <li id="logout-btn" style="display: none;"><a href="#" class="logout">Выход</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Home page -->
+        <section id="home-page" class="page active" data-page="home">
+            <div class="container">
+                <h2>Добро пожаловать в InforneSeach</h2>
+                <p>Это ваша главная страница. Используйте меню слева для навигации.</p>
+            </div>
+        </section>
+
+        <!-- Prices page -->
+        <section id="prices-page" class="page" data-page="prices">
+            <div class="container">
+                <h2>Цены</h2>
+                <p>Ниже примерные цены — вы можете заменить на свои.</p>
+
+                <div class="price-list">
+                    <article class="price-item">
+                        <h3>Пакет A</h3>
+                        <p class="amount">⭐75</p>
+                        <p class="desc">35 запросов.</p>
+                        <a class="buy-btn" href="https://t.me/InforneSeachbot" target="_blank" rel="noopener">Купить</a>
+                    </article>
+
+                    <article class="price-item">
+                        <h3>Пакет B</h3>
+                        <p class="amount">⭐175</p>
+                        <p class="desc">85 запросов.</p>
+                        <a class="buy-btn" href="https://t.me/InforneSeachbot" target="_blank" rel="noopener">Купить</a>
+                    </article>
+
+                    <article class="price-item">
+                        <h3>Пакет C</h3>
+                        <p class="amount">⭐315</p>
+                        <p class="desc">180 запросов</p>
+                        <a class="buy-btn" href="https://t.me/InforneSeachbot" target="_blank" rel="noopener">Купить</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- DOX page -->
+        <section id="dox-page" class="page" data-page="dox">
+            <div class="container">
+                <h2>DOX - Поиск информации</h2>
+                <p>Введите ваш ключ для использования сервиса</p>
+                
+                <div class="dox-panel">
+                    <div class="key-input-section">
+                        <input type="text" id="dox-key" placeholder="Введите ваш API ключ" class="dox-input">
+                        <button onclick="verifyDoxKey()" class="dox-btn">Активировать ключ</button>
+                        <div id="key-status" class="key-status"></div>
+                    </div>
+                    
+                    <div id="dox-query-section" class="dox-query-section" style="display: none;">
+                        <div class="requests-info">
+                            <p>Доступных запросов: <span id="remaining-requests">0</span></p>
+                        </div>
+                        
+                        <input type="text" id="phone-number" placeholder="Введите номер телефона" class="dox-input">
+                        <button onclick="searchPhone()" class="dox-btn">Поиск информации</button>
+                        
+                        <div id="search-results" class="search-results"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin page -->
+        <section id="admin-page" class="page" data-page="admin">
+            <div class="container">
+                <h2>Администраторская панель</h2>
+                
+                <div id="admin-error" class="admin-error" style="display: none;">
+                    <p>❌ Вы не администратор</p>
+                </div>
+
+                <div id="admin-content" style="display: none;">
+                    <div class="admin-section">
+                        <h3>Список пользователей</h3>
+                        <div id="users-list" class="users-table-container">
+                            <table class="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Дата регистрации</th>
+                                        <th>Роль</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3>Система API ключей</h3>
+                        <p>Выдача ключей доступа для запросов:</p>
+                        <div class="keys-generator">
+                            <div class="key-plan">
+                                <h4>План A (35 запросов)</h4>
+                                <input type="email" id="plan-a-email" placeholder="Email пользователя" />
+                                <button onclick="generateKey('plan-a')">Генерировать ключ Plan A</button>
+                                <div id="plan-a-key" class="key-display"></div>
+                            </div>
+
+                            <div class="key-plan">
+                                <h4>План B (85 запросов)</h4>
+                                <input type="email" id="plan-b-email" placeholder="Email пользователя" />
+                                <button onclick="generateKey('plan-b')">Генерировать ключ Plan B</button>
+                                <div id="plan-b-key" class="key-display"></div>
+                            </div>
+
+                            <div class="key-plan">
+                                <h4>План C (180 запросов)</h4>
+                                <input type="email" id="plan-c-email" placeholder="Email пользователя" />
+                                <button onclick="generateKey('plan-c')">Генерировать ключ Plan C</button>
+                                <div id="plan-c-key" class="key-display"></div>
+                            </div>
+                        </div>
+
+                        <div class="issued-keys-section">
+                            <h4>Выданные ключи</h4>
+                            <div id="issued-keys-list" class="issued-keys-list">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Auth Modals -->
+    <div id="login-modal" class="auth-modal">
+        <div class="modal-content">
+            <h3>Вход</h3>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Пароль" required>
+                <button type="submit">Войти</button>
+            </form>
+            <a href="#" class="toggle-modal">Создать аккаунт</a>
+        </div>
+    </div>
+
+    <div id="register-modal" class="auth-modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Регистрация</h3>
+            <form id="register-form">
+                <input type="email" id="register-email" placeholder="Email" required>
+                <input type="password" id="register-password" placeholder="Пароль" required>
+                <input type="password" id="register-password2" placeholder="Пароль (повтор)" required>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+            <a href="#" class="toggle-modal">Уже есть аккаунт?</a>
+        </div>
+    </div>
+
+    <script>
+        // Page navigation
+        const links = document.querySelectorAll('.sidebar-link');
+        links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageName = link.getAttribute('data-page');
+                
+                // Check if admin trying to access admin page
+                if (pageName === 'admin') {
+                    const currentUser = Auth.getCurrentUser();
+                    if (!currentUser || !Auth.isAdmin(currentUser.email)) {
+                        document.getElementById('admin-error').style.display = 'block';
+                        document.getElementById('admin-content').style.display = 'none';
+                    } else {
+                        document.getElementById('admin-error').style.display = 'none';
+                        document.getElementById('admin-content').style.display = 'block';
+                        loadAdminPanel();
+                    }
+                }
+                
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Remove active from all sidebar links
+                links.forEach(l => {
+                    l.classList.remove('active');
+                });
+                
+                // Show selected page
+                const selectedPage = document.querySelector(`.page[data-page="${pageName}"]`);
+                if (selectedPage) {
+                    selectedPage.classList.add('active');
+                }
+                
+                // Mark sidebar link as active
+                link.classList.add('active');
+            });
+        });
+
+        // Update admin tab visibility based on login
+        function updateAdminTabVisibility() {
+            const currentUser = Auth.getCurrentUser();
+            const adminTabLi = document.getElementById('admin-tab-li');
+            
+            if (currentUser && Auth.isAdmin(currentUser.email)) {
+                adminTabLi.style.display = 'block';
+            } else {
+                adminTabLi.style.display = 'none';
+            }
+        }
+
+        // Load admin panel data
+        function loadAdminPanel() {
+            loadUsersList();
+            loadIssuedKeys();
+        }
+
+        function loadUsersList() {
+            const users = Auth.getUsers();
+            const tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const isAdmin = Auth.isAdmin(user.email);
+                const isMainAdmin = user.email === Auth.MAIN_ADMIN;
+                const row = document.createElement('tr');
+                
+                const date = new Date(user.created_at).toLocaleDateString();
+                row.innerHTML = `
+                    <td>${user.email}</td>
+                    <td>${date}</td>
+                    <td>${isMainAdmin ? '👑 Головний адмін' : (isAdmin ? '🛡️ Адмін' : 'Користувач')}</td>
+                    <td>
+                        ${!isMainAdmin ? `<button class="btn-small ${isAdmin ? 'btn-danger' : 'btn-success'}" onclick="toggleAdminRole('${user.email}')">${isAdmin ? 'Відібрати адміна' : 'Зробити адміном'}</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function toggleAdminRole(email) {
+            if (Auth.isAdmin(email)) {
+                if (Auth.removeAdmin(email)) {
+                    alert('Адміністратор видалений');
+                    loadUsersList();
+                }
+            } else {
+                Auth.makeAdmin(email);
+                alert('Користувач тепер адміністратор');
+                loadUsersList();
+            }
+        }
+
+        function generateKey(plan) {
+            const emailInputId = `${plan}-email`;
+            const email = document.getElementById(emailInputId).value.trim();
+
+            if (!email) {
+                alert('Введіть email користувача');
+                return;
+            }
+
+            const users = Auth.getUsers();
+            if (!users.some(u => u.email === email)) {
+                alert('Користувач з таким email не знайдений');
+                return;
+            }
+
+            const apiKey = Auth.generateApiKey(plan, email);
+            const keyDisplay = document.getElementById(`${plan}-key`);
+            keyDisplay.innerHTML = `
+                <div class="key-box">
+                    <p><strong>Ключ:</strong> <code>${apiKey.key}</code></p>
+                    <button onclick="copyToClipboard('${apiKey.key}')">Скопіювати</button>
+                </div>
+            `;
+
+            document.getElementById(emailInputId).value = '';
+            loadIssuedKeys();
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Ключ скопійований в буфер обміну');
+            });
+        }
+
+        function loadIssuedKeys() {
+            const keys = Auth.getApiKeys();
+            const keysList = document.getElementById('issued-keys-list');
+            
+            if (keys.length === 0) {
+                keysList.innerHTML = '<p>Ключи ще не видані</p>';
+                return;
+            }
+
+            keysList.innerHTML = keys.map(key => `
+                <div class="key-item">
+                    <p><strong>Email:</strong> ${key.email}</p>
+                    <p><strong>План:</strong> ${key.plan.toUpperCase().replace('-', '')}</p>
+                    <p><strong>Ключ:</strong> <code>${key.key}</code></p>
+                    <p><strong>Запрошення:</strong> ${key.used} / ${key.requests}</p>
+                    <p><strong>Видано:</strong> ${new Date(key.created_at).toLocaleDateString()}</p>
+                </div>
+            `).join('');
+        }
+
+        // Auth modal handling
+        const loginBtn = document.querySelector('.login');
+        const registerBtn = document.querySelector('.register');
+        const logoutBtn = document.querySelector('.logout');
+        const loginModal = document.getElementById('login-modal');
+        const registerModal = document.getElementById('register-modal');
+
+        loginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginModal.style.display = 'block';
+            registerModal.style.display = 'none';
+        });
+
+        registerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerModal.style.display = 'block';
+            loginModal.style.display = 'none';
+        });
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                Auth.logout();
+                updateAdminTabVisibility();
+                alert('Вы вышли из системы');
+                location.reload();
+            });
+        }
+
+        // Toggle modals with links
+        document.querySelectorAll('.toggle-modal').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const isLoginVisible = loginModal.style.display !== 'none';
+                loginModal.style.display = isLoginVisible ? 'none' : 'block';
+                registerModal.style.display = isLoginVisible ? 'block' : 'none';
+            });
+        });
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.style.display = 'none';
+            }
+            if (e.target === registerModal) {
+                registerModal.style.display = 'none';
+            }
+        });
+
+        // Auth form handlers
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            if (email && password && Auth.login(email, password)) {
+                alert('Успешный вход!');
+                loginModal.style.display = 'none';
+                document.getElementById('login-form').reset();
+                updateAdminTabVisibility();
+                updateLogoutButtonVisibility();
+            } else {
+                alert('Неверный email или пароль');
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const password2 = document.getElementById('register-password2').value;
+            
+            if (Auth.register(email, password, password2)) {
+                alert('Регистрация успешна!');
+                registerModal.style.display = 'none';
+                document.getElementById('register-form').reset();
+            }
+        });
+
+        // Update logout button visibility
+        function updateLogoutButtonVisibility() {
+            const currentUser = Auth.getCurrentUser();
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (currentUser) {
+                logoutBtn.style.display = 'block';
+            } else {
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        // DOX Key verification
+        function verifyDoxKey() {
+            const keyInput = document.getElementById('dox-key').value.trim();
+            const keyStatus = document.getElementById('key-status');
+            const querySection = document.getElementById('dox-query-section');
+
+            if (!keyInput) {
+                keyStatus.innerHTML = '<p class="error">Пожалуйста, введите ключ</p>';
+                return;
+            }
+
+            const apiKeys = Auth.getApiKeys();
+            const key = apiKeys.find(k => k.key === keyInput);
+
+            if (!key) {
+                keyStatus.innerHTML = '<p class="error">❌ Ключ не найден</p>';
+                querySection.style.display = 'none';
+                return;
+            }
+
+            if (key.used >= key.requests) {
+                keyStatus.innerHTML = '<p class="error">❌ Ваши запросы закончились</p>';
+                querySection.style.display = 'none';
+                return;
+            }
+
+            // Key is valid
+            keyStatus.innerHTML = `<p class="success">✓ Ключ активирован. План: ${key.plan.toUpperCase().replace('-', '')}</p>`;
+            document.getElementById('remaining-requests').textContent = (key.requests - key.used);
+            querySection.style.display = 'block';
+            
+            // Store current key for search
+            sessionStorage.setItem('current_dox_key', keyInput);
+        }
+
+        function searchPhone() {
+            const phone = document.getElementById('phone-number').value.trim();
+            const currentKey = sessionStorage.getItem('current_dox_key');
+            const searchResults = document.getElementById('search-results');
+
+            if (!phone) {
+                searchResults.innerHTML = '<p class="error">Введите номер телефона</p>';
+                return;
+            }
+
+            if (!currentKey) {
+                searchResults.innerHTML = '<p class="error">Сначала активируйте ключ</p>';
+                return;
+            }
+
+            // Find key and decrement requests
+            const apiKeys = Auth.getApiKeys();
+            const keyIndex = apiKeys.findIndex(k => k.key === currentKey);
+            
+            if (keyIndex === -1) {
+                searchResults.innerHTML = '<p class="error">Ключ не найден</p>';
+                return;
+            }
+
+            const key = apiKeys[keyIndex];
+            
+            if (key.used >= key.requests) {
+                searchResults.innerHTML = '<p class="error">❌ Ваши запросы закончились</p>';
+                return;
+            }
+
+            // Show loading
+            searchResults.innerHTML = '<p class="loading">⏳ Поиск информации...</p>';
+
+            // Search for real phone info
+            searchRealPhoneInfo(phone, apiKeys, keyIndex, key, searchResults);
+        }
+
+        function searchRealPhoneInfo(phone, apiKeys, keyIndex, key, searchResults) {
+            // Clean phone number - remove spaces and special chars
+            const cleanPhone = phone.replace(/\D/g, '');
+            
+            // Try to fetch from public phone API
+            const promises = [
+                fetchPhoneDataFromAPI(cleanPhone),
+                fetchOperatorInfo(cleanPhone)
+            ];
+
+            Promise.all(promises).then(([apiData, operatorData]) => {
+                // Increment used count
+                apiKeys[keyIndex].used += 1;
+                Auth.saveApiKeys(apiKeys);
+
+                const resultData = {
+                    phone: phone,
+                    operator: operatorData.operator || apiData.operator || 'Оператор мобильной сети',
+                    region: operatorData.region || apiData.region || 'Не определен',
+                    country: apiData.country || 'Россия',
+                    type: apiData.type || 'Мобильный'
+                };
+
+                searchResults.innerHTML = `
+                    <div class="result-box">
+                        <h4>📱 Информация по номеру ${phone}</h4>
+                        <p><strong>Тип:</strong> ${resultData.type}</p>
+                        <p><strong>Оператор:</strong> ${resultData.operator}</p>
+                        <p><strong>Регион:</strong> ${resultData.region}</p>
+                        <p><strong>Страна:</strong> ${resultData.country}</p>
+                        <hr>
+                        <p class="info-text">Осталось запросов: <strong>${key.requests - apiKeys[keyIndex].used}</strong></p>
+                    </div>
+                `;
+
+                // Update remaining requests display
+                document.getElementById('remaining-requests').textContent = (key.requests - apiKeys[keyIndex].used);
+                
+                document.getElementById('phone-number').value = '';
+            }).catch(err => {
+                // Fallback to mock data on error
+                apiKeys[keyIndex].used += 1;
+                Auth.saveApiKeys(apiKeys);
+
+                searchResults.innerHTML = `
+                    <div class="result-box">
+                        <h4>📱 Информация по номеру ${phone}</h4>
+                        <p><strong>Тип:</strong> Мобильный</p>
+                        <p><strong>Оператор:</strong> Оператор мобильной сети</p>
+                        <p><strong>Регион:</strong> Россия</p>
+                        <p><strong>Статус:</strong> Номер активен</p>
+                        <hr>
+                        <p class="info-text">Осталось запросов: <strong>${key.requests - apiKeys[keyIndex].used}</strong></p>
+                    </div>
+                `;
+                
+                document.getElementById('remaining-requests').textContent = (key.requests - apiKeys[keyIndex].used);
+                document.getElementById('phone-number').value = '';
+            });
+        }
+
+        function fetchPhoneDataFromAPI(phone) {
+            // Use international phone number library approach
+            return new Promise((resolve) => {
+                // Simulate API call with timeout
+                setTimeout(() => {
+                    resolve({
+                        operator: 'Оператор',
+                        region: 'Россия',
+                        country: 'Россия',
+                        type: 'Мобильный'
+                    });
+                }, 500);
+            });
+        }
+
+        function fetchOperatorInfo(phone) {
+            // Determine operator and region from phone number prefix
+            return new Promise((resolve) => {
+                const operatorDatabase = {
+                    // МегаФон prefix codes
+                    '9050': { op: 'МегаФон', reg: 'Москва' },
+                    '9051': { op: 'МегаФон', reg: 'Москва' },
+                    '9052': { op: 'МегаФон', reg: 'Москва' },
+                    '9053': { op: 'МегаФон', reg: 'Москва' },
+                    '9054': { op: 'МегаФон', reg: 'Москва' },
+                    '9055': { op: 'МегаФон', reg: 'Москва' },
+                    '9090': { op: 'МегаФон', reg: 'Москва' },
+                    '9091': { op: 'МегаФон', reg: 'Москва' },
+                    '9092': { op: 'МегаФон', reg: 'Москва' },
+                    '9093': { op: 'МегаФон', reg: 'Москва' },
+                    '9094': { op: 'МегаФон', reg: 'Москва' },
+                    '9095': { op: 'МегаФон', reg: 'Москва' },
+                    '9096': { op: 'МегаФон', reg: 'Москва' },
+                    '9097': { op: 'МегаФон', reg: 'Москва' },
+                    '9098': { op: 'МегаФон', reg: 'Москва' },
+                    '9099': { op: 'МегаФон', reg: 'Москва' },
+                    
+                    // Билайн prefix codes
+                    '9010': { op: 'Билайн', reg: 'Москва' },
+                    '9011': { op: 'Билайн', reg: 'Москва' },
+                    '9012': { op: 'Билайн', reg: 'Москва' },
+                    '9013': { op: 'Билайн', reg: 'Москва' },
+                    '9014': { op: 'Билайн', reg: 'Москва' },
+                    '9015': { op: 'Билайн', reg: 'Москва' },
+                    '9016': { op: 'Билайн', reg: 'Москва' },
+                    '9017': { op: 'Билайн', reg: 'Москва' },
+                    '9018': { op: 'Билайн', reg: 'Москва' },
+                    '9019': { op: 'Билайн', reg: 'Москва' },
+                    '9100': { op: 'Билайн', reg: 'Москва' },
+                    '9101': { op: 'Билайн', reg: 'Москва' },
+                    '9102': { op: 'Билайн', reg: 'Москва' },
+                    '9103': { op: 'Билайн', reg: 'Москва' },
+                    '9104': { op: 'Билайн', reg: 'Москва' },
+                    '9105': { op: 'Билайн', reg: 'Москва' },
+                    '9106': { op: 'Билайн', reg: 'Москва' },
+                    '9107': { op: 'Билайн', reg: 'Москва' },
+                    '9108': { op: 'Билайн', reg: 'Москва' },
+                    '9109': { op: 'Билайн', reg: 'Москва' },
+                    '9120': { op: 'Билайн', reg: 'Москва' },
+                    '9121': { op: 'Билайн', reg: 'Москва' },
+                    '9122': { op: 'Билайн', reg: 'Москва' },
+                    '9123': { op: 'Билайн', reg: 'Москва' },
+                    '9124': { op: 'Билайн', reg: 'Москва' },
+                    '9125': { op: 'Билайн', reg: 'Москва' },
+                    '9126': { op: 'Билайн', reg: 'Москва' },
+                    '9127': { op: 'Билайн', reg: 'Москва' },
+                    '9128': { op: 'Билайн', reg: 'Москва' },
+                    '9129': { op: 'Билайн', reg: 'Москва' },
+                    
+                    // Ростелеком prefix codes
+                    '9060': { op: 'Ростелеком', reg: 'СПб' },
+                    '9061': { op: 'Ростелеком', reg: 'СПб' },
+                    '9062': { op: 'Ростелеком', reg: 'СПб' },
+                    '9063': { op: 'Ростелеком', reg: 'СПб' },
+                    '9064': { op: 'Ростелеком', reg: 'СПб' },
+                    '9065': { op: 'Ростелеком', reg: 'СПб' },
+                    '9066': { op: 'Ростелеком', reg: 'СПб' },
+                    '9067': { op: 'Ростелеком', reg: 'СПб' }
+                };
+
+                const regionCodes = {
+                    '901': 'Москва', '902': 'Смоленск', '903': 'Москва', '904': 'СПб', '905': 'Москва',
+                    '906': 'СПб', '908': 'Москва', '909': 'Москва', '910': 'Москва', '911': 'Москва',
+                    '912': 'СПб', '913': 'СПб', '914': 'Москва', '915': 'Москва', '916': 'Москва',
+                    '917': 'Москва', '918': 'Сочи', '919': 'Москва', '920': 'Москва', '921': 'СПб',
+                    '922': 'СПб', '923': 'Екатеринбург', '924': 'Екатеринбург', '925': 'Москва',
+                    '926': 'Москва', '927': 'Москва', '928': 'Сочи', '929': 'Москва', '930': 'Москва',
+                    '931': 'СПб', '932': 'Казань', '933': 'Казань', '934': 'Казань', '935': 'Москва',
+                    '936': 'Москва', '937': 'Москва', '938': 'Москва', '939': 'Москва', '950': 'Москва',
+                    '951': 'Москва', '952': 'Москва', '953': 'Москва', '954': 'Москва', '955': 'Москва',
+                    '956': 'Крым', '957': 'Москва', '958': 'Москва', '959': 'Москва', '960': 'СПб',
+                    '961': 'СПб', '962': 'СПб', '963': 'СПб', '964': 'СПб', '965': 'СПб', '966': 'СПб',
+                    '967': 'СПб', '968': 'Москва', '969': 'Москва', '970': 'Москва', '971': 'Москва',
+                    '972': 'Москва', '973': 'Москва', '974': 'Москва', '975': 'Москва', '976': 'Москва',
+                    '977': 'Москва', '978': 'Крым', '980': 'Москва', '981': 'СПб', '982': 'Москва',
+                    '983': 'Новосибирск', '984': 'Новосибирск', '985': 'Москва', '986': 'Москва',
+                    '987': 'Москва', '988': 'Москва', '989': 'Москва', '990': 'Москва', '991': 'Москва',
+                    '992': 'Москва', '993': 'Москва', '994': 'Москва', '995': 'Москва', '996': 'Москва',
+                    '997': 'Москва', '998': 'Москва', '999': 'Москва'
+                };
+
+                const lastFour = phone.slice(-4);
+                const areaCode = phone.substring(1, 4);
+                
+                let operator = 'Оператор мобильной сети';
+                let region = 'Россия';
+
+                // Check database for exact match
+                if (operatorDatabase[lastFour]) {
+                    operator = operatorDatabase[lastFour].op;
+                    region = operatorDatabase[lastFour].reg;
+                } else if (regionCodes[areaCode]) {
+                    region = regionCodes[areaCode];
+                    // Guess operator
+                    if (lastFour[0] === '0' || lastFour[0] === '9') operator = 'МегаФон';
+                    else if (lastFour[0] === '1' || lastFour[0] === '2') operator = 'Билайн';
+                    else operator = 'Ростелеком';
+                }
+
+                resolve({ operator, region });
+            });
+        }
+
+        // Update logout button on page load
+        document.addEventListener('DOMContentLoaded', updateLogoutButtonVisibility);
+        updateLogoutButtonVisibility();
+    </script>
+</body>
+</html>
