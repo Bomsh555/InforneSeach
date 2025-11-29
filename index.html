@@ -241,11 +241,13 @@
         function updateAdminTabVisibility() {
             const currentUser = Auth.getCurrentUser();
             const adminTabLi = document.getElementById('admin-tab-li');
-            
+            // Always show the Admin tab in the sidebar (so it appears on GitHub Pages).
+            // Mark it as 'locked' for users who are not admins (visual cue only).
+            adminTabLi.style.display = 'block';
             if (currentUser && Auth.isAdmin(currentUser.email)) {
-                adminTabLi.style.display = 'block';
+                adminTabLi.classList.remove('locked');
             } else {
-                adminTabLi.style.display = 'none';
+                adminTabLi.classList.add('locked');
             }
         }
 
