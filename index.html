@@ -399,15 +399,21 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
-            
-            if (email && password && Auth.login(email, password)) {
+
+            if (!email || !password) {
+                alert('Введите email и пароль');
+                return;
+            }
+
+            const res = Auth.login(email, password);
+            if (res && res.ok) {
                 alert('Успешный вход!');
                 loginModal.style.display = 'none';
                 document.getElementById('login-form').reset();
                 updateAdminTabVisibility();
                 updateLogoutButtonVisibility();
             } else {
-                alert('Неверный email или пароль');
+                alert(res && res.error ? res.error : 'Неверный email или пароль');
             }
         });
 
@@ -416,11 +422,14 @@
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
             const password2 = document.getElementById('register-password2').value;
-            
-            if (Auth.register(email, password, password2)) {
+
+            const res = Auth.register(email, password, password2);
+            if (res && res.ok) {
                 alert('Регистрация успешна!');
                 registerModal.style.display = 'none';
                 document.getElementById('register-form').reset();
+            } else {
+                alert(res && res.error ? res.error : 'Ошибка регистрации');
             }
         });
 
