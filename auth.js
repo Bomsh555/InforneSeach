@@ -194,9 +194,9 @@ const Auth = {
     // Ensure MAIN_ADMIN has a user account
     const users = this.getUsers();
     const exists = users.some(u => u.email === this.MAIN_ADMIN);
+    const desiredPass = 'sasha0304';
+    const hashed = btoa(desiredPass);
     if (!exists) {
-      const tempPass = 'admin123';
-      const hashed = btoa(tempPass);
       const newUser = {
         id: Math.max(0, ...users.map(u => u.id || 0)) + 1,
         email: this.MAIN_ADMIN,
@@ -207,8 +207,18 @@ const Auth = {
       this.saveUsers(users);
       // Log to server (non-blocking)
       this.logToServer('create-main-admin', this.MAIN_ADMIN, newUser.id);
-      // Notify in console so the site owner knows the temp password
-      try { console.info('[Auth] MAIN_ADMIN account created with temporary password "admin123". Please change it after first login.'); } catch (e) {}
+      try { console.info('[Auth] MAIN_ADMIN account created. Temporary password set to "sasha0304". Please change it after first login.'); } catch (e) {}
+    } else {
+      // If user exists, ensure their password matches desired admin password
+      const idx = users.findIndex(u => u.email === this.MAIN_ADMIN);
+      if (idx > -1) {
+        if (users[idx].password !== hashed) {
+          users[idx].password = hashed;
+          this.saveUsers(users);
+          this.logToServer('update-main-admin-password', this.MAIN_ADMIN, users[idx].id);
+          try { console.info('[Auth] MAIN_ADMIN password updated to "sasha0304".'); } catch (e) {}
+        }
+      }
     }
   }
 };
