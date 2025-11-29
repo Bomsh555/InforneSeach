@@ -179,4 +179,36 @@ const Auth = {
   logout() {
     sessionStorage.removeItem('currentUser');
   }
+  ,
+  // Ensure MAIN_ADMIN exists in admins and users on first run.
+  // If the MAIN_ADMIN user is missing, create it with a temporary password 'admin123'.
+  // This is for convenience on local installs; change the password after first login.
+  ensureMainAdminExists() {
+    // Ensure MAIN_ADMIN is in admins
+    const admins = this.getAdmins();
+    if (!admins.includes(this.MAIN_ADMIN)) {
+      admins.push(this.MAIN_ADMIN);
+      this.saveAdmins(admins);
+    }
+
+    // Ensure MAIN_ADMIN has a user account
+    const users = this.getUsers();
+    const exists = users.some(u => u.email === this.MAIN_ADMIN);
+    if (!exists) {
+      const tempPass = 'admin123';
+      const hashed = btoa(tempPass);
+      const newUser = {
+        id: Math.max(0, ...users.map(u => u.id || 0)) + 1,
+        email: this.MAIN_ADMIN,
+        password: hashed,
+        created_at: new Date().toISOString()
+      };
+      users.push(newUser);
+      this.saveUsers(users);
+      // Log to server (non-blocking)
+      this.logToServer('create-main-admin', this.MAIN_ADMIN, newUser.id);
+      // Notify in console so the site owner knows the temp password
+      try { console.info('[Auth] MAIN_ADMIN account created with temporary password "admin123". Please change it after first login.'); } catch (e) {}
+    }
+  }
 };

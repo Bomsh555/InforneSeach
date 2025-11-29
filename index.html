@@ -693,9 +693,25 @@
             });
         }
 
-        // Update logout button on page load
-        document.addEventListener('DOMContentLoaded', updateLogoutButtonVisibility);
-        updateLogoutButtonVisibility();
+        // Ensure main admin exists and update UI on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create MAIN_ADMIN account/admin entry if missing
+            if (typeof Auth !== 'undefined' && Auth.ensureMainAdminExists) {
+                Auth.ensureMainAdminExists();
+            }
+
+            // Update UI elements
+            updateLogoutButtonVisibility();
+            updateAdminTabVisibility();
+        });
+        // Also run immediately in case script executed after DOM ready
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            if (typeof Auth !== 'undefined' && Auth.ensureMainAdminExists) {
+                Auth.ensureMainAdminExists();
+            }
+            updateLogoutButtonVisibility();
+            updateAdminTabVisibility();
+        }
     </script>
 </body>
 </html>
