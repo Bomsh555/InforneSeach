@@ -642,6 +642,10 @@ body.theme-purple .site-header{
     z-index: 70;
 }
 
+/* Small adjustments for users modal */
+.users-table th, .users-table td { padding: 6px 8px; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 14px; }
+.auth-modal .modal-content { max-width: 700px; }
+
 .auth-modal .modal-content {
     padding: 1.5rem;
 }

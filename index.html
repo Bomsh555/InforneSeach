@@ -31,6 +31,7 @@
                 <ul>
                     <li><a href="#" class="login">Вход</a></li>
                     <li><a href="#" class="register">Регистрация</a></li>
+                    <li><a href="#" class="show-users-btn">Показать пользователей</a></li>
                     <li id="logout-btn" style="display: none;"><a href="#" class="logout">Выход</a></li>
                 </ul>
             </nav>
@@ -192,6 +193,35 @@
                 <button type="submit">Зарегистрироваться</button>
             </form>
             <a href="#" class="toggle-modal">Уже есть аккаунт?</a>
+        </div>
+    </div>
+
+    <!-- Admin auth modal (for viewing users on static hosts) -->
+    <div id="admin-auth-modal" class="auth-modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Авторизация администратора</h3>
+            <form id="admin-auth-form">
+                <input type="email" id="admin-auth-email" placeholder="Admin Email" required />
+                <input type="password" id="admin-auth-password" placeholder="Пароль администратора" required />
+                <button type="submit">Войти как админ</button>
+            </form>
+            <p style="font-size:12px;margin-top:.5rem">Если вы главный админ, используйте свой email и пароль.</p>
+        </div>
+    </div>
+
+    <!-- Users modal -->
+    <div id="users-modal" class="auth-modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Зарегистрированные пользователи</h3>
+            <div style="max-height:60vh;overflow:auto;">
+                <table class="users-table" style="width:100%;">
+                        <thead>
+                            <tr><th>Email</th><th>Дата</th><th>Роль</th><th>Дії</th></tr>
+                        </thead>
+                        <tbody id="modal-users-tbody"></tbody>
+                    </table>
+            </div>
+            <div style="margin-top:.5rem;text-align:right;"><button id="users-modal-close">Закрити</button></div>
         </div>
     </div>
 
@@ -433,6 +463,82 @@
             } else {
                 alert(res && res.error ? res.error : 'Ошибка регистрации');
             }
+        });
+
+        // Show users button handling
+        const showUsersBtn = document.querySelector('.show-users-btn');
+        const adminAuthModal = document.getElementById('admin-auth-modal');
+        const usersModal = document.getElementById('users-modal');
+
+        function openUsersModal() {
+            const tbody = document.getElementById('modal-users-tbody');
+            const users = Auth.getUsers();
+            tbody.innerHTML = '';
+            const currentUser = Auth.getCurrentUser();
+            const currentIsAdmin = currentUser && Auth.isAdmin(currentUser.email);
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const role = Auth.isAdmin(u.email) ? (u.email === Auth.MAIN_ADMIN ? '👑 Головний адмін' : '🛡️ Адмін') : 'Користувач';
+                let actionCell = '';
+                // If current user is admin, show promote/demote buttons (but don't allow changing MAIN_ADMIN)
+                if (currentIsAdmin) {
+                    if (u.email !== Auth.MAIN_ADMIN) {
+                        if (Auth.isAdmin(u.email)) {
+                            actionCell = `<button class="btn-small btn-danger" onclick="modalToggleAdminRole('${u.email}')">Забрати адміна</button>`;
+                        } else {
+                            actionCell = `<button class="btn-small btn-success" onclick="modalToggleAdminRole('${u.email}')">Зробити адміном</button>`;
+                        }
+                    } else {
+                        actionCell = '—';
+                    }
+                } else {
+                    actionCell = currentUser && currentUser.email === u.email ? '<em>Ви</em>' : '';
+                }
+
+                tr.innerHTML = `<td>${u.email}</td><td>${new Date(u.created_at).toLocaleString()}</td><td>${role}</td><td>${actionCell}</td>`;
+                tbody.appendChild(tr);
+            });
+            usersModal.style.display = 'block';
+        }
+
+        // Wrapper for modal actions so UI refreshes after role change
+        function modalToggleAdminRole(email) {
+            // reuse existing toggleAdminRole which updates localStorage
+            toggleAdminRole(email);
+            // refresh modal list
+            openUsersModal();
+            // also refresh admin panel list if open
+            try { loadUsersList(); } catch (e) {}
+        }
+
+        showUsersBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const currentUser = Auth.getCurrentUser();
+            if (currentUser && Auth.isAdmin(currentUser.email)) {
+                openUsersModal();
+            } else {
+                adminAuthModal.style.display = 'block';
+            }
+        });
+
+        // Admin auth form
+        document.getElementById('admin-auth-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-auth-email').value.trim();
+            const password = document.getElementById('admin-auth-password').value;
+            const res = Auth.login(email, password);
+            if (res && res.ok && Auth.isAdmin(email)) {
+                adminAuthModal.style.display = 'none';
+                openUsersModal();
+                updateAdminTabVisibility();
+                updateLogoutButtonVisibility();
+            } else {
+                alert('Неверный админ email или пароль');
+            }
+        });
+
+        document.getElementById('users-modal-close').addEventListener('click', () => {
+            usersModal.style.display = 'none';
         });
 
         // Update logout button visibility
