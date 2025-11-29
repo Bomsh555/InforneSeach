@@ -137,33 +137,14 @@
                     </div>
 
                     <div class="admin-section">
-                        <h3>Система API ключей</h3>
-                        <p>Выдача ключей доступа для запросов:</p>
-                        <div class="keys-generator">
-                            <div class="key-plan">
-                                <h4>План A (35 запросов)</h4>
-                                <input type="email" id="plan-a-email" placeholder="Email пользователя" />
-                                <button onclick="generateKey('plan-a')">Генерировать ключ Plan A</button>
-                                <div id="plan-a-key" class="key-display"></div>
-                            </div>
-
-                            <div class="key-plan">
-                                <h4>План B (85 запросов)</h4>
-                                <input type="email" id="plan-b-email" placeholder="Email пользователя" />
-                                <button onclick="generateKey('plan-b')">Генерировать ключ Plan B</button>
-                                <div id="plan-b-key" class="key-display"></div>
-                            </div>
-
-                            <div class="key-plan">
-                                <h4>План C (180 запросов)</h4>
-                                <input type="email" id="plan-c-email" placeholder="Email пользователя" />
-                                <button onclick="generateKey('plan-c')">Генерировать ключ Plan C</button>
-                                <div id="plan-c-key" class="key-display"></div>
-                            </div>
+                        <h3>Видача API ключів</h3>
+                        <p>Оберіть користувача та план, натисніть "Видати ключ":</p>
+                        <div id="quick-key-issuance" class="quick-key-section">
+                            <!-- Populated by JS with users and plan buttons -->
                         </div>
 
                         <div class="issued-keys-section">
-                            <h4>Выданные ключи</h4>
+                            <h4>Видані ключи</h4>
                             <div id="issued-keys-list" class="issued-keys-list">
                             </div>
                         </div>
@@ -315,6 +296,7 @@
         // Load admin panel data
         function loadAdminPanel() {
             loadUsersList();
+            loadQuickKeyIssuance();
             loadIssuedKeys();
         }
 
@@ -357,12 +339,9 @@
             }
         }
 
-        function generateKey(plan) {
-            const emailInputId = `${plan}-email`;
-            const email = document.getElementById(emailInputId).value.trim();
-
+        function generateKey(plan, email) {
             if (!email) {
-                alert('Введіть email користувача');
+                alert('Email не вказаний');
                 return;
             }
 
@@ -373,16 +352,35 @@
             }
 
             const apiKey = Auth.generateApiKey(plan, email);
-            const keyDisplay = document.getElementById(`${plan}-key`);
-            keyDisplay.innerHTML = `
-                <div class="key-box">
-                    <p><strong>Ключ:</strong> <code>${apiKey.key}</code></p>
-                    <button onclick="copyToClipboard('${apiKey.key}')">Скопіювати</button>
-                </div>
-            `;
-
-            document.getElementById(emailInputId).value = '';
+            alert(`Ключ видано для ${email}!\n\nПлан: ${plan.toUpperCase().replace('-', '')}\nКлюч: ${apiKey.key}`);
+            
+            loadQuickKeyIssuance();
             loadIssuedKeys();
+        }
+
+        function loadQuickKeyIssuance() {
+            const users = Auth.getUsers();
+            const container = document.getElementById('quick-key-issuance');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            users.forEach(user => {
+                const userRow = document.createElement('div');
+                userRow.style.marginBottom = '12px';
+                userRow.style.padding = '10px';
+                userRow.style.border = '1px solid #ddd';
+                userRow.style.borderRadius = '4px';
+                userRow.innerHTML = `
+                    <p style="margin:0 0 8px 0;"><strong>${user.email}</strong></p>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="btn-small btn-success" onclick="generateKey('plan-a', '${user.email}')">А (35)</button>
+                        <button class="btn-small btn-success" onclick="generateKey('plan-b', '${user.email}')">В (85)</button>
+                        <button class="btn-small btn-success" onclick="generateKey('plan-c', '${user.email}')">С (180)</button>
+                    </div>
+                `;
+                container.appendChild(userRow);
+            });
         }
 
         function copyToClipboard(text) {
