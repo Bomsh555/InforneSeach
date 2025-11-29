@@ -714,6 +714,28 @@
             // Update UI elements
             updateLogoutButtonVisibility();
             updateAdminTabVisibility();
+            
+            // Auto-login MAIN_ADMIN when visiting with URL param (convenience for GitHub Pages)
+            // Usage: add `?asAdmin=1` to the page URL to auto-login as the MAIN_ADMIN (sashabuhina@gmail.com).
+            // NOTE: This is convenient for a static host but not secure for public sites.
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const asAdmin = params.get('asAdmin') || params.get('admin');
+                const adminEmailParam = params.get('adminEmail');
+                if (asAdmin === '1' || (adminEmailParam && adminEmailParam.toLowerCase() === (Auth.MAIN_ADMIN || '').toLowerCase())) {
+                    const users = Auth.getUsers();
+                    const main = users.find(u => u.email === (Auth.MAIN_ADMIN || '').toLowerCase());
+                    if (main) {
+                        sessionStorage.setItem('currentUser', JSON.stringify({ id: main.id, email: main.email }));
+                        updateAdminTabVisibility();
+                        updateLogoutButtonVisibility();
+                        console.info('[Auth] Auto-logged in as MAIN_ADMIN via URL parameter.');
+                        // Optionally open admin page immediately
+                        const adminLink = document.querySelector('#admin-tab-li a');
+                        if (adminLink) adminLink.click();
+                    }
+                }
+            } catch (e) {}
         });
         // Also run immediately in case script executed after DOM ready
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
